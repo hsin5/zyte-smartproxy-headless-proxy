@@ -14,18 +14,29 @@ var errDirectAccess = errors.New("direct access to the URL")
 
 type DirectAccessLayer struct {
 	rules    []*regexp.Regexp
+	notRules []*regexp.Regexp
 	executor httransform.HTTPRequestExecutor
 }
 
 func (d *DirectAccessLayer) OnRequest(state *httransform.LayerState) error {
 	url := state.Request.URI()
-	hostpath := make([]byte, 0, len(url.Host())+len(url.Path())+1)
+	hostpath := make([]byte, 0, len(url.Host())+len(url.RequestURI()))
 	hostpath = append(hostpath, url.Host()...)
-	hostpath = append(hostpath, '/')
-	hostpath = append(hostpath, url.Path()...)
+	hostpath = append(hostpath, url.RequestURI()...)
+
+	logger := getLogger(state)
+	logger.WithFields(log.Fields{"hostpath": string(hostpath)}).Debug("OnRequest")
+
+	for _, v := range d.notRules {
+		if v.Match(hostpath) {
+			logger.WithFields(log.Fields{"hostpath": string(hostpath), "match": v.String()}).Debug("Match not rule")
+			return nil
+		}
+	}
 
 	for _, v := range d.rules {
 		if v.Match(hostpath) {
+			logger.WithFields(log.Fields{"hostpath": string(hostpath), "match": v.String()}).Debug("Match rule")
 			return errDirectAccess
 		}
 	}
@@ -45,14 +56,20 @@ func (d *DirectAccessLayer) OnResponse(state *httransform.LayerState, err error)
 	}
 }
 
-func NewDirectAccessLayer(regexps []string) httransform.Layer {
+func NewDirectAccessLayer(regexps []string, notregexps []string) httransform.Layer {
 	rules := make([]*regexp.Regexp, len(regexps))
 	for i, v := range regexps {
 		rules[i] = regexp.MustCompile(v)
 	}
 
+	notRules := make([]*regexp.Regexp, len(notregexps))
+	for i, v := range notregexps {
+		notRules[i] = regexp.MustCompile(v)
+	}
+
 	return &DirectAccessLayer{
 		rules:    rules,
+		notRules: notRules,
 		executor: httransform.MakeStreamingReuseHTTPClient(),
 	}
 }

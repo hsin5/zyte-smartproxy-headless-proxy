@@ -109,6 +109,11 @@ var ( // nolint: gochecknoglobals
 		Short('z').
 		Envar("CRAWLERA_HEADLESS_DIRECTACCESS").
 		Strings()
+	notDirectAccessHostPathRegexps = app.Flag("not-direct-access-hostpath-regexps",
+		"A list of regexps for hostpath for not direct access, bypassing Crawlera.").
+		Short('q').
+		Envar("CRAWLERA_HEADLESS_NOTDIRECTACCESS").
+		Strings()
 )
 
 func main() {
@@ -138,20 +143,21 @@ func main() {
 
 	listen := conf.Bind()
 	log.WithFields(log.Fields{
-		"debug":                          conf.Debug,
-		"adblock-lists":                  conf.AdblockLists,
-		"no-auto-sessions":               conf.NoAutoSessions,
-		"apikey":                         conf.APIKey,
-		"bindip":                         conf.BindIP,
-		"bindport":                       conf.BindPort,
-		"proxy-api-ip":                   conf.ProxyAPIIP,
-		"proxy-api-port":                 conf.ProxyAPIPort,
-		"crawlera-host":                  conf.CrawleraHost,
-		"crawlera-port":                  conf.CrawleraPort,
-		"dont-verify-crawlera-cert":      conf.DoNotVerifyCrawleraCert,
-		"concurrent-connections":         conf.ConcurrentConnections,
-		"xheaders":                       conf.XHeaders,
-		"direct-access-hostpath-regexps": conf.DirectAccessHostPathRegexps,
+		"debug":                              conf.Debug,
+		"adblock-lists":                      conf.AdblockLists,
+		"no-auto-sessions":                   conf.NoAutoSessions,
+		"apikey":                             conf.APIKey,
+		"bindip":                             conf.BindIP,
+		"bindport":                           conf.BindPort,
+		"proxy-api-ip":                       conf.ProxyAPIIP,
+		"proxy-api-port":                     conf.ProxyAPIPort,
+		"crawlera-host":                      conf.CrawleraHost,
+		"crawlera-port":                      conf.CrawleraPort,
+		"dont-verify-crawlera-cert":          conf.DoNotVerifyCrawleraCert,
+		"concurrent-connections":             conf.ConcurrentConnections,
+		"xheaders":                           conf.XHeaders,
+		"direct-access-hostpath-regexps":     conf.DirectAccessHostPathRegexps,
+		"not-direct-access-hostpath-regexps": conf.NotDirectAccessHostPathRegexps,
 	}).Debugf("Listen on %s", listen)
 
 	statsContainer := stats.NewStats()
@@ -198,6 +204,7 @@ func getConfig() (*config.Config, error) {
 	conf.MaybeSetProxyAPIIP(*proxyAPIIP)
 	conf.MaybeSetProxyAPIPort(*proxyAPIPort)
 	conf.MaybeSetDirectAccessHostPathRegexps(*directAccessHostPathRegexps)
+	conf.MaybeSetNotDirectAccessHostPathRegexps(*notDirectAccessHostPathRegexps)
 
 	for k, v := range *xheaders {
 		conf.SetXHeader(k, v)
@@ -210,7 +217,7 @@ func getConfig() (*config.Config, error) {
 	return conf, nil
 }
 
-func appendClientHeader(conf *config.Config) (err error){
+func appendClientHeader(conf *config.Config) (err error) {
 	var clientVersion = "1"
 	var clientHdr = fmt.Sprintf("zyte-smartproxy-headless-proxy/%s", clientVersion)
 	conf.SetXHeader("x-crawlera-client", clientHdr)

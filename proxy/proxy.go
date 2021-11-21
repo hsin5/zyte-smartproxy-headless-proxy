@@ -63,8 +63,12 @@ func makeProxyLayers(conf *config.Config, crawleraExecutor httransform.Executor,
 		proxyLayers = append(proxyLayers, layers.NewAdblockLayer(conf.AdblockLists))
 	}
 
-	if len(conf.DirectAccessHostPathRegexps) > 0 {
-		proxyLayers = append(proxyLayers, layers.NewDirectAccessLayer(conf.DirectAccessHostPathRegexps))
+	if len(conf.DirectAccessHostPathRegexps) > 0 && len(conf.NotDirectAccessHostPathRegexps) > 0 {
+		proxyLayers = append(proxyLayers, layers.NewDirectAccessLayer(conf.DirectAccessHostPathRegexps, conf.NotDirectAccessHostPathRegexps))
+	} else if len(conf.DirectAccessHostPathRegexps) > 0 {
+		proxyLayers = append(proxyLayers, layers.NewDirectAccessLayer(conf.DirectAccessHostPathRegexps, nil))
+	} else if len(conf.NotDirectAccessHostPathRegexps) > 0 {
+		proxyLayers = append(proxyLayers, layers.NewDirectAccessLayer(nil, conf.NotDirectAccessHostPathRegexps))
 	}
 
 	if conf.ConcurrentConnections > 0 {
