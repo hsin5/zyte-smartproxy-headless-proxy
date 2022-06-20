@@ -55,6 +55,8 @@ headers into the requests. Basically, you have to do a bare minimum:
 
 ## Installation
 
+Check out the [Using Headless Browsers with Zyte Smart Proxy Manager](https://docs.zyte.com/smart-proxy-manager/headless.html) manual.
+
 ### Install binaries
 
 There are some prebuilt binaries available on Release pages. Please download
@@ -90,26 +92,19 @@ $ brew install go make git
 
 #### Install from HomeBrew
 
-If you use [HomeBrew](https://brew.sh) or
-[LinuxBrew](http://linuxbrew.sh/), you can use it to install headless
+If you use [HomeBrew](https://brew.sh), you can use it to install headless
 proxy:
 
 ```console
-$ brew install https://raw.githubusercontent.com/scrapinghub/crawlera-headless-proxy/master/crawlera-headless-proxy.rb
-```
-
-or if you want to have a development version:
-
-```console
-$ brew install --HEAD https://raw.githubusercontent.com/scrapinghub/crawlera-headless-proxy/master/crawlera-headless-proxy.rb
+$ curl -L https://raw.githubusercontent.com/zytedata/zyte-smartproxy-headless-proxy/master/crawlera-headless-proxy.rb > crawlera-headless-proxy.rb && brew install --HEAD crawlera-headless-proxy.rb
 ```
 
 
 #### Build binary
 
 ```console
-$ git clone https://github.com/scrapinghub/crawlera-headless-proxy.git
-$ cd crawlera-headless-proxy
+$ git clone https://github.com/zytedata/zyte-smartproxy-headless-proxy.git
+$ cd zyte-smartproxy-headless-proxy
 ```
 
 The next step is to execute make
@@ -134,7 +129,7 @@ the process is finished.
 To download prebuilt container, please do the following:
 
 ```console
-$ docker pull scrapinghub/crawlera-headless-proxy
+$ docker pull zytedata/zyte-smartproxy-headless-proxy
 ```
 
 If you want to build this image locally, please do it with make (also,
@@ -196,6 +191,11 @@ Flags:
   -z, --direct-access-hostpath-regexps=DIRECT-ACCESS-HOSTPATH-REGEXPS ...
                              A list of regexps for hostpath for direct access, bypassing Crawlera.
       --version              Show application version.
+```
+
+Docker example:
+```console
+$ docker run --name crawlera-headless-proxy -p 3128:3128 zytedata/zyte-smartproxy-headless-proxy --help
 ```
 
 ### Configuration
@@ -270,6 +270,11 @@ this order (1 has max priority, 4 - minimal):
 2. Commandline flags
 3. Configuration file
 4. Defaults
+
+Docker example:
+```console
+$ docker run --name crawlera-headless-proxy -p 3128:3128 zytedata/zyte-smartproxy-headless-proxy -a $APIKEY -d -x profile=pass -x cookies=disable -x no-bancheck=1 --direct-access-hostpath-regexps=".*?\.(?:txt|json|css|less|js|mjs|cjs|gif|ico|jpe?g|svg|png|webp|mkv|mp4|mpe?g|webm|eot|ttf|woff2?)$" --adblock-list="https://easylist.to/easylist/easylist.txt" --adblock-list="https://easylist.to/easylist/easyprivacy.txt"
+```
 
 
 ## Concurrency

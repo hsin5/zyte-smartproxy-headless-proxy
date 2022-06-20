@@ -1,7 +1,7 @@
 ###############################################################################
 # BUILD STAGE
 
-FROM golang:1.14-alpine AS build-env
+FROM golang:1.16-alpine AS build-env
 
 WORKDIR /app
 
@@ -13,15 +13,8 @@ RUN set -x \
     make \
     upx
 
-ADD https://docs.zyte.com/_downloads/753f39eae366f4d8c42249b7b1246c29/zyte-proxy-ca.crt /usr/local/share/ca-certificates/crawlera-ca.crt
-RUN set -x \
-  && sha1sum /usr/local/share/ca-certificates/crawlera-ca.crt | cut -f1 -d' ' | \
-    while read -r sum _; do \
-      if [ "${sum}" != "5798e59f6f7ecad3c0e1284f42b07dcaa63fbd37" ]; then \
-        echo "Incorrect CA certificate checksum ${sum}"; \
-        exit 1; \
-    fi; done \
-  && update-ca-certificates
+ADD https://docs.zyte.com/_static/zyte-smartproxy-ca.crt /usr/local/share/ca-certificates/
+RUN update-ca-certificates
 
 COPY . /app
 

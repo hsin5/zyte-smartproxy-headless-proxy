@@ -4,11 +4,14 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha1" // nolint: gosec
 	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -116,7 +119,23 @@ var ( // nolint: gochecknoglobals
 		Strings()
 )
 
+// nolint:funlen
 func main() {
+	// Root context is crucial here. When root context is closed, a
+	// proxy is shutdown.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Gracefully terminate context on SIGINT and SIGTERM signals.
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		for range signals {
+			cancel()
+		}
+	}()
+
 	app.Version(version)
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetLevel(log.WarnLevel)
@@ -166,7 +185,7 @@ func main() {
 
 	appendClientHeader(conf)
 
-	if crawleraProxy, err := proxy.NewProxy(conf, statsContainer); err == nil {
+	if crawleraProxy, err := proxy.NewProxy(conf, statsContainer, &ctx); err == nil {
 		if ln, err2 := net.Listen("tcp", listen); err2 != nil {
 			log.Fatal(err2)
 		} else {
@@ -217,11 +236,10 @@ func getConfig() (*config.Config, error) {
 	return conf, nil
 }
 
-func appendClientHeader(conf *config.Config) (err error) {
-	var clientVersion = "1"
-	var clientHdr = fmt.Sprintf("zyte-smartproxy-headless-proxy/%s", clientVersion)
+func appendClientHeader(conf *config.Config) {
+	clientVersion := "1"
+	clientHdr := fmt.Sprintf("zyte-smartproxy-headless-proxy/%s", clientVersion)
 	conf.SetXHeader("x-crawlera-client", clientHdr)
-	return nil
 }
 
 func initCertificates(conf *config.Config) (err error) {
